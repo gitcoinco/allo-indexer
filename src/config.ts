@@ -22,50 +22,55 @@ const chains: Chain[] = [
     name: "mainnet",
     rpc: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
     tokens: [
-      {
-        code: "USDC",
-        address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-        decimals: 6,
-      },
-      {
-        code: "DAI",
-        address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-        decimals: 18,
-      },
-      {
-        code: "ETH",
-        address: "0x0000000000000000000000000000000000000000",
-        decimals: 18,
-      },
+      // {
+      //   code: "USDC",
+      //   address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      //   decimals: 6,
+      // },
+      // {
+      //   code: "DAI",
+      //   address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+      //   decimals: 18,
+      // },
+      // {
+      //   code: "ETH",
+      //   address: "0x0000000000000000000000000000000000000000",
+      //   decimals: 18,
+      // },
     ],
     subscriptions: [
+      // {
+      //   address: "0x03506eD3f57892C85DB20C36846e9c808aFe9ef4",
+      //   abi: "#abis/v2/ProjectRegistry.json",
+      // },
+      // {
+      //   address: "0xE2Bf906f7d10F059cE65769F53fe50D8E0cC7cBe",
+      //   abi: "#abis/v1/RoundFactory.json",
+      //   events: {
+      //     RoundCreated: "RoundCreatedV1",
+      //   },
+      // },
+      // {
+      //   address: "0x06A6Cc566c5A88E77B1353Cdc3110C2e6c828e38",
+      //   abi: "#abis/v1/QuadraticFundingVotingStrategyFactory.json",
+      //   events: {
+      //     VotingContractCreated: "VotingContractCreatedV1",
+      //   },
+      // },
+      // {
+      //   address: "0x9Cb7f434aD3250d1656854A9eC7A71EceC6eE1EF",
+      //   abi: "#abis/v2/RoundFactory.json",
+      //   fromBlock: 16994474,
+      // },
+      // {
+      //   address: "0x4a850F463D1C4842937c5Bc9540dBc803D744c9F",
+      //   abi: "#abis/v2/QuadraticFundingVotingStrategyFactory.json",
+      //   fromBlock: 16994526,
+      // },
       {
-        address: "0x03506eD3f57892C85DB20C36846e9c808aFe9ef4",
-        abi: "#abis/v2/ProjectRegistry.json",
-      },
-      {
-        address: "0xE2Bf906f7d10F059cE65769F53fe50D8E0cC7cBe",
-        abi: "#abis/v1/RoundFactory.json",
-        events: {
-          RoundCreated: "RoundCreatedV1",
-        },
-      },
-      {
-        address: "0x06A6Cc566c5A88E77B1353Cdc3110C2e6c828e38",
-        abi: "#abis/v1/QuadraticFundingVotingStrategyFactory.json",
-        events: {
-          VotingContractCreated: "VotingContractCreatedV1",
-        },
-      },
-      {
-        address: "0x9Cb7f434aD3250d1656854A9eC7A71EceC6eE1EF",
-        abi: "#abis/v2/RoundFactory.json",
-        fromBlock: 16994474,
-      },
-      {
-        address: "0x4a850F463D1C4842937c5Bc9540dBc803D744c9F",
-        abi: "#abis/v2/QuadraticFundingVotingStrategyFactory.json",
-        fromBlock: 16994526,
+        address: "0x0E3efD5BE54CC0f4C64e0D186b0af4b7F2A0e95F",
+        abi: "#abis/gtcStaking/IDStaking.json",
+        fromBlock: 16401288,
       },
     ],
   },

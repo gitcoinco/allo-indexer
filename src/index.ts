@@ -81,14 +81,14 @@ await updatePricesAndWrite(chain);
 if (args.follow) {
   await updatePricesAndWriteLoop(chain);
 }
-
+console.log("Starting indexer");
 const indexer = await createIndexer(provider, storage, handleEvent, {
   toBlock,
   logLevel: Log.Debug,
   eventCacheDirectory: args["no-cache"] ? null : "./.cache",
   runOnce: !args.follow,
 });
-
+console.log(chain.subscriptions, "chain.subscriptions")
 for (const subscription of chain.subscriptions) {
   indexer.subscribe(
     subscription.address,

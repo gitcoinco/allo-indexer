@@ -32,11 +32,11 @@ if [ "$1" == "server" ]; then
 
   echo "=> Index successful, running server!"
 
-  supervise "npm run passport -- --follow" &
-  supervise "npm run index:goerli -- --follow" &
+  # supervise "npm run passport -- --follow" &
+  # supervise "npm run index:goerli -- --follow" &
   supervise "npm run index:mainnet -- --follow" &
-  supervise "npm run index:optimism -- --follow" &
-  supervise "npm run index:fantom -- --follow" &
+  # supervise "npm run index:optimism -- --follow" &
+  # supervise "npm run index:fantom -- --follow" &
 
   supervise "npm run serve" &
 

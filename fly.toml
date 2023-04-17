@@ -1,4 +1,4 @@
-app = "grants-stack-indexer"
+app = "gtc-staker-indexer"
 kill_signal = "SIGINT"
 kill_timeout = 5
 primary_region = "den"
