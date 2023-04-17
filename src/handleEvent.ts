@@ -539,20 +539,20 @@ async function handleEvent(indexer: Indexer<JsonStorage>, event: Event) {
       
     case "xStake": {
       // id is roundId and the user who was staked community on
-      const id = `${event.args.roundId}-${event.args.user}}`;
+      const id = `${event.args.staker}`;
 
-      const dbCollection = db.collection("communityStakers");
+      const dbCollection = db.collection(`selfStakers/${event.args.roundId}`);
 
       const stakingEvent = await dbCollection.findById(id);
 
       if (stakingEvent) {
-        await db.collection("communityStakers").updateById(id, (stakingEvent) => ({
+        await dbCollection.updateById(id, (stakingEvent) => ({
           ...stakingEvent,
           stakers: [...stakingEvent.stakers, event.args.staker],
           stakedAmounts: [...stakingEvent.stakedAmounts, event.args.amount],
         }));
       } else {
-        await db.collection("communityStakers").insert({
+        await dbCollection.insert({
           id,
           roundId: event.args.roundId,
           staked: event.args.staked,
@@ -564,19 +564,19 @@ async function handleEvent(indexer: Indexer<JsonStorage>, event: Event) {
     }
       
     case "selfStake": {
-      const id = `${event.args.roundId}-${event.args.staker}`;
+      const id = `${event.args.staker}`;
 
-      const dbCollection = db.collection("selfStakers");
+      const dbCollection = db.collection(`communityStakers/${event.args.roundId}`);
 
       const stakingEvent = await dbCollection.findById(id);
 
       if (stakingEvent) {
-        await db.collection("selfStakers").updateById(id, (stakingEvent) => ({
+        await dbCollection.updateById(id, (stakingEvent) => ({
           ...stakingEvent,
           stakedAmount: [...stakingEvent.stakedAmount, event.args.amount],
         }));
       } else {
-        await db.collection("selfStakers").insert({
+        await dbCollection.insert({
           id,
           roundId: event.args.roundId,
           staker: event.args.staker,
