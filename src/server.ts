@@ -149,7 +149,7 @@ app.get("/chains/:chainId/rounds/:roundId/matches", (req, res) => {
   }
 });
 
-if (process.env.TS_JEST !== "1") {
+if (process.env.VITEST !== "true") {
   app.listen(config.port, () => {
     console.log(`Server listening on port ${config.port}`);
   });
