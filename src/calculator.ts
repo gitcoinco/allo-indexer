@@ -114,6 +114,10 @@ export default class Calculator {
       throw new ResourceNotFoundError("round");
     }
 
+    if (round.matchAmountUSD === undefined) {
+      throw new ResourceNotFoundError("round match amount");
+    }
+
     const minAmount = this.minimumAmount ?? round.minimumAmount ?? 0;
 
     const isEligible = (_c: Contribution, addressData: any): boolean => {

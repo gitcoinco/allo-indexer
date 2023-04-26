@@ -89,5 +89,48 @@ describe("server", () => {
         request(app).get("/chains/1/rounds/0x1234/matches").expect(404, done);
       });
     });
+
+    describe("calculations", () => {
+      test("should render calculations", (done) => {
+        calculatorConfig.dataProvider = new TestDataProvider({
+          "1/rounds/0x1234/votes.json": "votes",
+          "1/rounds/0x1234/applications.json": "applications",
+          "1/rounds.json": "rounds",
+          "passport_scores.json": "passport_scores",
+        });
+
+        const expectedResults = [
+          {
+            applicationId: "application-id-1",
+            projectId: "project-id-1",
+            totalReceived: 15,
+            sumOfSqrt: 7,
+            matched: 13.6,
+          },
+          {
+            applicationId: "application-id-2",
+            projectId: "project-id-2",
+            totalReceived: 10,
+            sumOfSqrt: 8,
+            matched: 21.6,
+          },
+          {
+            applicationId: "application-id-3",
+            projectId: "project-id-3",
+            totalReceived: 34,
+            sumOfSqrt: 14,
+            matched: 64.8,
+          },
+        ];
+
+        request(app)
+          .get("/chains/1/rounds/0x1234/matches")
+          .then((resp) => {
+            expect(resp.statusCode).toBe(200);
+            expect(resp.body).toEqual(expectedResults);
+            done();
+          });
+      });
+    });
   });
 });
