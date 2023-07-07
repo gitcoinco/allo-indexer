@@ -11,3 +11,7 @@ export interface RoundContract extends ethers.Contract {
   roundStartTime: () => Promise<ethers.BigNumber>;
   roundEndTime: () => Promise<ethers.BigNumber>;
 }
+
+export interface DirectPayoutContract extends ethers.Contract {
+  roundAddress: () => Promise<string>;
+}
