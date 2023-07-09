@@ -1,6 +1,11 @@
 import fs from "fs";
 import csv from "csv-parser";
-import { linearQF, Contribution, Calculation } from "pluralistic";
+import {
+  linearQF,
+  Contribution,
+  Calculation,
+  RecipientsCalculations,
+} from "pluralistic";
 import type { PassportScore } from "../passport/index.js";
 import { convertToUSD } from "../prices/index.js";
 import { tokenDecimals } from "../config.js";
@@ -253,6 +258,143 @@ export default class Calculator {
     }
 
     return augmented;
+  }
+
+  /**
+   * Estimates matching for a given project and potential amounts
+   * */
+  estimateMatching(potentialVotes: Contribution[]) {
+    const votes = this.parseJSONFile<Vote>(
+      "votes",
+      `${this.chainId}/rounds/${this.roundId}/votes.json`
+    );
+    const applications = this.parseJSONFile<Application>(
+      "applications",
+      `${this.chainId}/rounds/${this.roundId}/applications.json`
+    );
+
+    const rounds = this.parseJSONFile<Round>(
+      "rounds",
+      `${this.chainId}/rounds.json`
+    );
+
+    const passportScores = this.parseJSONFile<PassportScore>(
+      "passport scores",
+      "passport_scores.json"
+    );
+
+    const round = rounds.find((r: Round) => r.id === this.roundId);
+
+    if (round === undefined) {
+      throw new ResourceNotFoundError("round");
+    }
+
+    if (round.matchAmount === undefined) {
+      throw new ResourceNotFoundError("round match amount");
+    }
+
+    if (round.token === undefined) {
+      throw new ResourceNotFoundError("round token");
+    }
+
+    const matchAmount = BigInt(round.matchAmount);
+    const matchTokenDecimals = BigInt(tokenDecimals[this.chainId][round.token]);
+
+    let matchingCapAmount: bigint = 0n;
+
+    if (round.metadata?.quadraticFundingConfig?.matchingCap ?? false) {
+      // round.metadata.quadraticFundingConfig.matchingCapAmount is a percentage, 0 to 100, could contain decimals
+      matchingCapAmount =
+        (matchAmount *
+          BigInt(
+            Math.trunc(
+              Number(
+                round.metadata?.quadraticFundingConfig?.matchingCapAmount ?? 0
+              ) * 100
+            )
+          )) /
+        10000n;
+    }
+
+    const votesWithCoefficients = getVotesWithCoefficients(
+      round,
+      applications,
+      votes,
+      passportScores,
+      {
+        minimumAmountUSD: this.minimumAmountUSD,
+        enablePassport: this.enablePassport,
+        passportThreshold: this.passportThreshold,
+      }
+    );
+
+    const contributions: Array<Contribution> = votesWithCoefficients.flatMap(
+      (vote) => {
+        const scaleFactor = Math.pow(10, 4);
+        const coefficient = BigInt(
+          Math.trunc(
+            (this.overrides[vote.id] ?? vote.coefficient) * scaleFactor
+          )
+        );
+
+        const amount = BigInt(vote.amountRoundToken);
+        const multipliedAmount = (amount * coefficient) / BigInt(scaleFactor);
+
+        return [
+          {
+            contributor: vote.voter,
+            recipient: vote.applicationId,
+            amount: multipliedAmount,
+          },
+        ];
+      }
+    );
+
+    const contributionsWithPotentialVotes = [
+      ...contributions,
+      ...potentialVotes,
+    ];
+
+    const potentialResults = linearQF(
+      contributionsWithPotentialVotes,
+      matchAmount,
+      matchTokenDecimals,
+      {
+        minimumAmount: 0n,
+        matchingCapAmount,
+        ignoreSaturation: this.ignoreSaturation ?? false,
+      }
+    );
+
+    const currentResults = linearQF(
+      contributions,
+      matchAmount,
+      matchTokenDecimals,
+      {
+        minimumAmount: 0n,
+        matchingCapAmount,
+        ignoreSaturation: this.ignoreSaturation ?? false,
+      }
+    );
+
+    const finalResults: {
+      [recipient: string]: Calculation & { difference: bigint };
+    } = {};
+
+    Object.keys(potentialResults).forEach((key) => {
+      const potentialResult = potentialResults[key];
+      /** Can be undefined, but spreading an undefined is a no-op, so it's okay here */
+      const currentResult = currentResults[key];
+      finalResults[key] = {
+        ...currentResult,
+        ...potentialResult,
+        /*Here, however, subtracting undefined from a bigint would fail,
+         * so we explicitly subtract 0 if it's undefined */
+        difference: potentialResult.matched - (currentResult.matched ?? 0n),
+      };
+    });
+
+    return finalResults;
   }
 
   parseJSONFile<T>(fileDescription: string, path: string): Array<T> {
