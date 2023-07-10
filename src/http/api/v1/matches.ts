@@ -118,4 +118,41 @@ router.post(
   }
 );
 
+router.get("/chains/:chainId/rounds/:roundId/estimate", async (req, res) => {
+  await estimateMatchesHandler(req, res, 200);
+});
+
+async function estimateMatchesHandler(
+  req: Request,
+  res: Response,
+  okStatusCode: number
+) {
+  const chainId = Number(req.params.chainId);
+  const roundId = req.params.roundId;
+
+  const enablePassport = boolParam(req.query, "enablePassport");
+  const ignoreSaturation = boolParam(req.query, "ignoreSaturation");
+
+  const calculatorOptions: CalculatorOptions = {
+    dataProvider: calculatorConfig.dataProvider,
+    chainId: chainId,
+    roundId: roundId,
+    minimumAmountUSD: undefined,
+    matchingCapAmount: undefined,
+    passportThreshold: undefined,
+    enablePassport: enablePassport,
+    ignoreSaturation: ignoreSaturation,
+    overrides: {},
+  };
+
+  const calculator = new Calculator(calculatorOptions);
+  const matches = await calculator.calculate();
+  const responseBody = JSON.stringify(matches, (_key, value) =>
+    typeof value === "bigint" ? value.toString() : (value as unknown)
+  );
+  res.setHeader("content-type", "application/json");
+  res.status(okStatusCode);
+  res.send(responseBody);
+}
+
 export default router;
