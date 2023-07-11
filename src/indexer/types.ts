@@ -59,7 +59,7 @@ export type Application = {
   id: string;
   projectId: string;
   roundId: string;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+  status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | "IN_REVIEW";
   amountUSD: number;
   votes: number;
   uniqueContributors: number;
@@ -82,6 +82,10 @@ export type Application = {
   } | null;
   createdAtBlock: number;
   statusUpdatedAtBlock: number;
+  statusSnapshots: Array<{
+    status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | "IN_REVIEW";
+    statusUpdatedAtBlock: number;
+  }>
 };
 
 export type Vote = {

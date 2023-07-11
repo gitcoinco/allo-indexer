@@ -17,7 +17,7 @@ import {
   Vote,
 } from "./types.js";
 import { Event } from "./events.js";
-import { RoundContract } from "./contracts.js";
+import { RoundContract, DirectPayoutContract } from "./contracts.js";
 import { importAbi } from "./utils.js";
 import { PriceProvider } from "../prices/index.js";
 
@@ -31,6 +31,7 @@ enum ApplicationStatus {
   APPROVED,
   REJECTED,
   CANCELLED,
+  IN_REVIEW,
 }
 
 function fullProjectId(
@@ -273,6 +274,10 @@ async function handleEvent(
         metadata: null,
         createdAtBlock: event.blockNumber,
         statusUpdatedAtBlock: event.blockNumber,
+        statusSnapshots: [{
+          status: "PENDING",
+          statusUpdatedAtBlock: event.blockNumber,
+        }]
       };
 
       await applications.insert(application);
@@ -363,23 +368,45 @@ async function handleEvent(
 
       for (let i = startIndex; i < startIndex + bitmap.itemsPerRow; i++) {
         const status = bitmap.getStatus(i);
-        const statusString = ApplicationStatus[status];
+        const statusString = ApplicationStatus[status] as Application["status"];
         const application = await db
           .collection<Application>(`rounds/${event.address}/applications`)
-          .updateById(i.toString(), (application) => ({
-            ...application,
-            status: statusString as Application["status"],
-            statusUpdatedAtBlock: event.blockNumber,
-          }));
+          .updateById(i.toString(), (application) => {
+            const newApplication = {...application}
+            const prevStatus = application.status;
+            newApplication.status = statusString;
+            newApplication.statusUpdatedAtBlock = event.blockNumber
+            newApplication.statusSnapshots = [...application.statusSnapshots]
+
+            if (prevStatus !== statusString) {
+              newApplication.statusSnapshots.push({
+                status: statusString,
+                statusUpdatedAtBlock: event.blockNumber,
+              })
+            }
+
+            return newApplication
+          });
 
         if (application) {
           await db
             .collection<Application>(`rounds/${event.address}/projects`)
-            .updateById(application.projectId, (application) => ({
-              ...application,
-              status: statusString as Application["status"],
-              statusUpdatedAtBlock: event.blockNumber,
-            }));
+            .updateById(application.projectId, (application) => {
+              const newApplication = {...application}
+              const prevStatus = application.status;
+              newApplication.status = statusString;
+              newApplication.statusUpdatedAtBlock = event.blockNumber
+              newApplication.statusSnapshots = [...application.statusSnapshots]
+
+              if (prevStatus !== statusString) {
+                newApplication.statusSnapshots.push({
+                  status: statusString,
+                  statusUpdatedAtBlock: event.blockNumber,
+                })
+              }
+
+              return newApplication
+            });
         }
       }
       break;
@@ -610,6 +637,59 @@ async function handleEvent(
           )
           .insert(vote),
       ]);
+
+      break;
+    }
+
+    // --- Direct Payout Strategy
+    case "PayoutContractCreated": {
+      indexer.subscribe(
+        event.args.payoutContractAddress,
+        (
+          await import(
+            "#abis/v2/DirectPayoutStrategyImplementation.json",
+            {
+              assert: { type: "json" },
+            }
+          )
+        ).default,
+        event.blockNumber
+      );
+      break;
+    }
+
+    case "ApplicationInReview": {
+      const contract = indexer.subscribe(
+        event.address,
+        (
+          await import("#abis/v2/DirectPayoutStrategyImplementation.json", {
+            assert: { type: "json" },
+          })
+        ).default,
+        event.blockNumber
+      ) as DirectPayoutContract;
+
+      const round = await contract.roundAddress();
+
+      const statusString = ApplicationStatus[4] as Application["status"];
+      await db
+        .collection<Application>(`rounds/${round}/applications`)
+        .updateById(event.args.applicationIndex.toString(), (application) => {
+          const newApplication = {...application}
+          const prevStatus = application.status;
+          newApplication.status = statusString;
+          newApplication.statusUpdatedAtBlock = event.blockNumber
+          newApplication.statusSnapshots = [...application.statusSnapshots]
+
+          if (prevStatus !== statusString) {
+            newApplication.statusSnapshots.push({
+              status: statusString,
+              statusUpdatedAtBlock: event.blockNumber,
+            })
+          }
+
+          return newApplication
+        })
 
       break;
     }

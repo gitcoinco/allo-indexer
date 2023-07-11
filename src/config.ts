@@ -111,6 +111,11 @@ export const chains: Chain[] = [
         abi: "#abis/v2/QuadraticFundingVotingStrategyFactory.json",
         fromBlock: 8790265,
       },
+      {
+        address: "0x0077551e24bfB910aBABedC4336246e34B5fB0A2",
+        abi: "#abis/v2/DirectPayoutStrategyFactory.json",
+        fromBlock: 9284367,
+      },
     ],
   },
   {
